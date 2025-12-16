@@ -1,0 +1,46 @@
+name: Build Flet APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Permite rodar manualmente clicando num botão
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Flet and Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flet
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0' # Versão estável compatível com Flet atual
+          channel: 'stable'
+
+      - name: Configure Flet for Android
+        run: |
+          # Isso garante que o Flet instale as ferramentas necessárias
+          flet build apk --project biometria_app --no-android-signing --verbose || true
+          # O comando acima pode falhar na primeira vez configurando, mas prepara o terreno
+
+      - name: Build APK
+        run: flet build apk --verbose
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: meu-app-android
+          path: build/app/outputs/flutter-apk/app-release.apk
